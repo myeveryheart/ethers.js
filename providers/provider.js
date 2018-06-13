@@ -2,7 +2,6 @@
 
 var inherits = require('inherits');
 
-var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 
 var networks = require('./networks.json');
 
@@ -567,7 +566,7 @@ utils.defineProperty(Provider, 'getNetwork', function(network) {
 utils.defineProperty(Provider, 'networks', networks);
 
 utils.defineProperty(Provider, 'fetchJSON', function(url, json, processFunc) {
-    var headers = [ ];
+    let headers = {};
 
     if (typeof(url) === 'object' && url.url != null && url.user != null && url.password != null) {
         if (url.url.substring(0, 6) !== 'https:' && url.forceInsecure !== true) {
@@ -575,80 +574,50 @@ utils.defineProperty(Provider, 'fetchJSON', function(url, json, processFunc) {
         }
 
         var authorization = url.user + ':' + url.password;
-        headers.push({
-            key: 'Authorization',
-            value: 'Basic ' + utils.base64.encode(utils.toUtf8Bytes(authorization))
-        });
+        headers['Authorization'] = 'Basic ' + utils.base64.encode(utils.toUtf8Bytes(authorization));
 
         url = url.url;
     }
 
     return new Promise(function(resolve, reject) {
-        var request = new XMLHttpRequest();
+        const network = weex.requireModule('network');
+        let request = {};
 
+        request['url'] = url;
         if (json) {
-            request.open('POST', url, true);
-            headers.push({ key: 'Content-Type', value: 'application/json' });
+            request['method'] = 'POST';
+            request['body'] = json
+            headers['Content-Type'] = 'application/json';
         } else {
-            request.open('GET', url, true);
+            request['method'] = 'GET';
         }
+        request['headers'] = headers;
 
-        headers.forEach(function(header) {
-            request.setRequestHeader(header.key, header.value);
-        });
-
-        request.onreadystatechange = function() {
-            if (request.readyState !== 4) { return; }
-
+        network.request(request, (response) => {
+            const status = response['status'];
+            const responseData = response['data'];
+            
+            let result = null;
             try {
-                var result = JSON.parse(request.responseText);
+                result = JSON.parse(responseData);
             } catch (error) {
                 var jsonError = new Error('invalid json response');
                 jsonError.orginialError = error;
-                jsonError.responseText = request.responseText;
+                jsonError.responseText = responseData;
                 jsonError.url = url;
                 reject(jsonError);
                 return;
             }
 
-            if (processFunc) {
-                try {
-                    result = processFunc(result);
-                } catch (error) {
-                    error.url = url;
-                    error.body = json;
-                    error.responseText = request.responseText;
-                    reject(error);
-                    return;
-                }
-            }
-
-            if (request.status != 200) {
-                var error = new Error('invalid response - ' + request.status);
-                error.statusCode = request.statusCode;
+            if (status != 200) {
+                var error = new Error('invalid response - ' + status);
+                error.statusCode = status;
                 reject(error);
                 return;
             }
 
             resolve(result);
-        };
-
-        request.onerror = function(error) {
-            reject(error);
-        }
-
-        try {
-            if (json) {
-                request.send(json);
-            } else {
-                request.send();
-            }
-
-        } catch (error) {
-            var connectionError = new Error('connection error');
-            connectionError.error = error;
-            reject(connectionError);
-        }
+          });
     });
 });
 
