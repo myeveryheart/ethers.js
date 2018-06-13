@@ -1,5 +1,5 @@
 {
-  "name": "ethers",
+  "name": "ethers-for-weex",
   "version": "3.0.21",
   "description": "Ethereum wallet library.",
   "main": "index.js",
@@ -42,12 +42,13 @@
   },
   "keywords": [
     "ethereum",
-    "wallet"
+    "wallet",
+    "weex"
   ],
-  "author": "Richard Moore <me@ricmoo.com>",
+  "author": "Mario <myeveryheart@qq.com>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ethers-io/ethers-wallet.git"
+    "url": "https://github.com/myeveryheart/ethers.js-for-weex.git"
   },
   "license": "MIT"
 }
