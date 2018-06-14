@@ -609,6 +609,18 @@ utils.defineProperty(Provider, 'fetchJSON', function(url, json, processFunc) {
                 return;
             }
 
+            if (processFunc) {
+                try {
+                    result = processFunc(result);
+                } catch (error) {
+                    error.url = url;
+                    error.body = json;
+                    error.responseText = responseData;
+                    reject(error);
+                    return;
+                }
+            }
+            
             if (status != 200) {
                 var error = new Error('invalid response - ' + status);
                 error.statusCode = status;
